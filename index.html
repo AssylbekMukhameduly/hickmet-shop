@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>HICKMET</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+  /* =========================================================
+     НАСТРОЙКА — меняется только одна строка ниже:
+     адрес вашего n8n до слова /webhook включительно.
+     Пример: https://hickmet.app.n8n.cloud/webhook
+     ========================================================= */
+  window.HK_API = 'https://ВАШ-АДРЕС.app.n8n.cloud/webhook';
+</script>
+<style>
+  :root{
+    --bg: var(--tg-theme-bg-color, #ffffff);
+    --bg2: var(--tg-theme-secondary-bg-color, #f3f2ef);
+    --text: var(--tg-theme-text-color, #1c1b19);
+    --hint: var(--tg-theme-hint-color, #8a877f);
+    --link: var(--tg-theme-link-color, #1f5c4a);
+    --btn: var(--tg-theme-button-color, #1f5c4a);
+    --btn-text: var(--tg-theme-button-text-color, #ffffff);
+    --accent: #b8893b;
+    --sale: #c0392b;
+    --line: rgba(127,127,127,.18);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg2);color:var(--text);
+    font:15px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  input,textarea,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);
+    border-radius:12px;padding:12px 14px;width:100%;outline:none}
+  input:focus,textarea:focus{border-color:var(--btn)}
+  .hidden{display:none!important}
+
+  /* header */
+  .top{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 16px 10px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .logo{font-weight:800;letter-spacing:.18em;font-size:18px}
+  .logo small{display:block;font-weight:500;letter-spacing:.08em;font-size:10px;color:var(--hint)}
+  .cartbtn{position:relative;width:42px;height:42px;border-radius:50%;background:var(--bg2);display:grid;place-items:center}
+  .cartbtn svg{width:22px;height:22px}
+  .badge{position:absolute;top:-2px;right:-2px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;
+    background:var(--sale);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center}
+  .sale{margin-top:10px;border-radius:12px;padding:9px 12px;background:linear-gradient(90deg,#1f5c4a,#2d7a63);
+    color:#fff;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+  .sale b{font-size:16px;color:#ffd98a}
+  .search{margin-top:10px}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;scrollbar-width:none;background:var(--bg)}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;padding:7px 13px;border-radius:20px;background:var(--bg2);font-size:13px;white-space:nowrap}
+  .chip.on{background:var(--btn);color:var(--btn-text)}
+
+  /* grid */
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px}
+  @media(min-width:640px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  .card{background:var(--bg);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;position:relative;text-align:left}
+  .ph{aspect-ratio:3/4;background:var(--bg2);display:grid;place-items:center;overflow:hidden;position:relative}
+  .ph img{width:100%;height:100%;object-fit:cover}
+  .ph.np{aspect-ratio:4/3}
+  .sheet .ph.np{aspect-ratio:auto;height:150px}
+  .ph .ini{font-size:34px;font-weight:800;letter-spacing:.06em;color:var(--hint);opacity:.55}
+  .ph .tag{position:absolute;left:8px;top:8px;background:var(--sale);color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:8px}
+  .fav{position:absolute;right:6px;top:6px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.85);display:grid;place-items:center}
+  .fav svg{width:18px;height:18px;stroke:#555;fill:none;stroke-width:2}
+  .fav.on svg{fill:var(--sale);stroke:var(--sale)}
+  .info{padding:9px 10px 11px;display:flex;flex-direction:column;gap:4px;flex:1}
+  .name{font-size:13px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px}
+  .price{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+  .price b{font-size:16px}
+  .old{color:var(--hint);text-decoration:line-through;font-size:12px}
+  .sz{font-size:12px;color:var(--hint)}
+  .empty{padding:48px 24px;text-align:center;color:var(--hint)}
+
+  /* sheet */
+  .veil{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+  .sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:0 0 calc(18px + env(safe-area-inset-bottom))}
+  .sheet .ph{aspect-ratio:1/1}
+  .sbody{padding:16px}
+  .sbody h2{margin:0 0 6px;font-size:19px}
+  .lbl{font-size:13px;color:var(--hint);margin:16px 0 8px}
+  .sizes{display:flex;flex-wrap:wrap;gap:8px}
+  .size{min-width:52px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);font-weight:600;text-align:center}
+  .size small{display:block;font-weight:400;font-size:11px;color:var(--hint)}
+  .size.on{border-color:var(--btn);background:var(--btn);color:var(--btn-text)}
+  .size.on small{color:var(--btn-text);opacity:.8}
+  .size:disabled{opacity:.35;text-decoration:line-through}
+  .qty{display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border-radius:12px}
+  .qty button{width:40px;height:40px;font-size:20px;font-weight:600}
+  .qty span{min-width:28px;text-align:center;font-weight:700}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .row b{white-space:nowrap}
+  .primary{width:100%;padding:15px;border-radius:14px;background:var(--btn);color:var(--btn-text);font-weight:700;font-size:16px;margin-top:18px}
+  .primary:disabled{opacity:.45}
+  .close{position:absolute;right:12px;top:12px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.9);font-size:20px;z-index:2}
+
+  /* pages */
+  .page{padding:12px 12px 120px}
+  .page h1{font-size:20px;margin:6px 4px 12px}
+  .box{background:var(--bg);border-radius:var(--radius);padding:4px 14px}
+  .line{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center}
+  .line:last-child{border-bottom:0}
+  .thumb{width:56px;height:72px;border-radius:10px;background:var(--bg2);flex:0 0 auto;overflow:hidden;display:grid;place-items:center;font-weight:800;color:var(--hint)}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .grow{flex:1;min-width:0}
+  .grow .n{font-weight:600;font-size:14px}
+  .grow .m{font-size:12px;color:var(--hint);margin-top:2px}
+  .del{color:var(--hint);font-size:13px;padding:4px 0}
+  .total{display:flex;justify-content:space-between;padding:14px 4px;font-size:17px;font-weight:700}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:13px;color:var(--hint);margin:0 0 6px 2px}
+  .seg{display:flex;background:var(--bg2);border-radius:12px;padding:3px}
+  .seg button{flex:1;padding:10px;border-radius:10px;font-weight:600;font-size:14px}
+  .seg button.on{background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .err{color:var(--sale);font-size:13px;margin-top:6px}
+  .done{text-align:center;padding:56px 24px}
+  .done .ok{width:72px;height:72px;border-radius:50%;background:#2d7a63;color:#fff;font-size:38px;display:grid;place-items:center;margin:0 auto 18px}
+  .done h1{margin:0 0 8px}
+  .done p{color:var(--hint);margin:6px 0}
+  .ref{margin-top:24px;background:var(--bg);border-radius:var(--radius);padding:14px;text-align:left;font-size:14px}
+  .backlink{color:var(--link);font-weight:600;padding:6px 4px}
+  .loader{padding:80px 0;text-align:center;color:var(--hint)}
+  .toast{white-space:nowrap;position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(20,20,20,.9);
+    color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:40;transition:opacity .25s}
+  .webbar{position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);z-index:15}
+  .webbar .primary{margin:0}
+</style>
+</head>
+<body>
+
+<header class="top" id="top">
+  <div class="brand">
+    <div class="logo">HICKMET<small>COLLECTION</small></div>
+    <button class="cartbtn" id="cartBtn" aria-label="Корзина">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 3H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg>
+      <span class="badge hidden" id="badge">0</span>
+    </button>
+  </div>
+  <div class="sale" id="saleBar"><span>Распродажа на все позиции</span><b id="saleTxt">−20%</b></div>
+  <input class="search" id="q" type="search" placeholder="Поиск: абайка, хамис, рюкзак…" autocomplete="off">
+</header>
+<nav class="chips" id="chips"></nav>
+
+<main id="vCatalog"><div class="loader" id="loader">Загружаем каталог…</div><div class="grid" id="grid"></div></main>
+<main id="vCart" class="page hidden"></main>
+<main id="vCheckout" class="page hidden"></main>
+<main id="vDone" class="hidden"></main>
+
+<div class="webbar hidden" id="webbar"><button class="primary" id="webbarBtn"></button></div>
+<div id="modal"></div>
+
+<script>
+(function(){
+  'use strict';
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const inTG = !!(tg && tg.initData);
+  const qs = new URLSearchParams(location.search);
+  const API = (qs.get('api') || window.HK_API).replace(/\/$/, '');
+  const BOT = qs.get('bot') || '';
+
+  const S = { products: [], cats: [], discount: 0, cat: 'Все', q: '', cart: {}, favs: {}, view: 'catalog',
+              form: { name: '', phone: '', delivery: 'Самовывоз', address: '', comment: '' }, sending: false };
+
+  /* ---------- storage (Telegram CloudStorage, fallback localStorage) ---------- */
+  const store = {
+    get(k){ return new Promise(res => {
+      try { if (inTG && tg.CloudStorage) { tg.CloudStorage.getItem(k, (e, v) => res(e ? null : v)); return; } } catch(e){}
+      try { res(localStorage.getItem(k)); } catch(e){ res(null); }
+    }); },
+    set(k, v){
+      try { if (inTG && tg.CloudStorage) { tg.CloudStorage.setItem(k, v); return; } } catch(e){}
+      try { localStorage.setItem(k, v); } catch(e){}
+    }
+  };
+  const save = () => { store.set('hk_cart', JSON.stringify(S.cart)); store.set('hk_favs', JSON.stringify(S.favs)); };
+
+  /* ---------- helpers ---------- */
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const money = n => Math.round(n).toLocaleString('ru-RU') + ' ₸';
+  const oldPrice = p => S.discount > 0 ? Math.round(p / (1 - S.discount)) : 0;
+  const initials = n => n.replace(/[^A-Za-zА-Яа-яЁёҚқҢңҰұҮүӘәІіӨөҒғҺһ ]/g,'').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const haptic = t => { try { tg.HapticFeedback.impactOccurred(t || 'light'); } catch(e){} };
+  function toast(msg){
+    document.querySelectorAll('.toast').forEach(x => x.remove());
+    const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = 0; setTimeout(() => t.remove(), 300); }, 1600);
+  }
+  const bySku = {};
+  function photoHTML(p, cls){
+    return p.photo
+      ? `<img src="${esc(p.photo)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ini',textContent:'${esc(initials(p.name))}'}))">`
+      : `<span class="${cls || 'ini'}">${esc(initials(p.name))}</span>`;
+  }
+
+  /* ---------- load ---------- */
+  async function load(){
+    const [c, f, fm] = await Promise.all([store.get('hk_cart'), store.get('hk_favs'), store.get('hk_form')]);
+    try { S.cart = JSON.parse(c) || {}; } catch(e){}
+    try { S.favs = JSON.parse(f) || {}; } catch(e){}
+    try { Object.assign(S.form, JSON.parse(fm) || {}); } catch(e){}
+    if (inTG && !S.form.name) {
+      const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+      if (u) S.form.name = [u.first_name, u.last_name].filter(Boolean).join(' ');
+    }
+    try {
+      const r = await fetch(API + '/hickmet-catalog', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      S.products = d.products || [];
+      S.discount = Number(d.discount) || 0;
+      S.cats = d.categories || [...new Set(S.products.map(p => p.cat))];
+    } catch(e) {
+      $('loader').innerHTML = 'Не удалось загрузить каталог.<br><br><button class="backlink" onclick="location.reload()">Обновить</button>';
+      return;
+    }
+    S.products.forEach(p => p.sizes.forEach(s => { bySku[s.sku] = { p, s }; }));
+    // drop cart lines that are gone or exceed stock
+    for (const k of Object.keys(S.cart)) {
+      if (!bySku[k]) delete S.cart[k];
+      else S.cart[k] = Math.min(S.cart[k], bySku[k].s.stock);
+      if (S.cart[k] <= 0) delete S.cart[k];
+    }
+    $('saleTxt').textContent = S.discount > 0 ? '−' + Math.round(S.discount * 100) + '%' : '';
+    if (!(S.discount > 0)) $('saleBar').classList.add('hidden');
+    $('loader').remove();
+    renderChips(); renderGrid(); updateCart();
+  }
+
+  /* ---------- catalog ---------- */
+  function renderChips(){
+    const favCount = Object.keys(S.favs).filter(id => S.products.some(p => String(p.id) === id)).length;
+    const list = ['Все', ...(favCount ? ['♥ Избранное'] : []), ...S.cats];
+    $('chips').innerHTML = list.map(c => `<button class="chip${c === S.cat ? ' on' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+  }
+  function visible(){
+    const q = S.q.trim().toLowerCase();
+    return S.products.filter(p =>
+      (S.cat === 'Все' || (S.cat === '♥ Избранное' ? S.favs[p.id] : p.cat === S.cat)) &&
+      (!q || p.name.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q)));
+  }
+  function renderGrid(){
+    const list = visible();
+    $('grid').innerHTML = list.length ? list.map(p => {
+      const stockSizes = p.sizes.filter(s => s.stock > 0);
+      const prices = stockSizes.map(s => s.price || p.price);
+      const minP = Math.min(...prices), from = prices.some(x => x !== minP) ? 'от ' : '';
+      const op = from ? 0 : oldPrice(minP);
+      const szTxt = stockSizes.length === 1 && /один/i.test(stockSizes[0].size) ? 'В наличии' :
+        stockSizes.map(s => s.size.replace(/\s*\(.*\)/, '')).slice(0, 6).join(' · ');
+      return `<div class="card" data-id="${p.id}">
+        <div class="ph${p.photo ? '' : ' np'}">${photoHTML(p)}${op ? `<span class="tag">−${Math.round(S.discount*100)}%</span>` : ''}
+          <button class="fav${S.favs[p.id] ? ' on' : ''}" data-fav="${p.id}" aria-label="В избранное"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.5-9.4C1 8 3.4 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.6 0 6 3.5 4.5 7.1C19.5 16.4 12 21 12 21z"/></svg></button>
+        </div>
+        <div class="info"><div class="name">${esc(p.name)}</div>
+          <div class="price"><b>${from}${money(minP)}</b>${op ? `<span class="old">${money(op)}</span>` : ''}</div>
+          <div class="sz">${esc(szTxt)}</div></div></div>`;
+    }).join('') : `<div class="empty" style="grid-column:1/-1">Ничего не найдено</div>`;
+  }
+
+  /* ---------- product sheet ---------- */
+  function openProduct(id){
+    const p = S.products.find(x => String(x.id) === String(id)); if (!p) return;
+    const avail = p.sizes.filter(s => s.stock > 0);
+    let sel = avail.length === 1 ? avail[0].sku : null, qty = 1;
+    const draw = () => {
+      const s = sel && bySku[sel].s;
+      const unit = s ? unitPrice(sel) : Math.min(...p.sizes.map(z => z.price || p.price));
+      const op = oldPrice(unit);
+      const inCart = sel ? (S.cart[sel] || 0) : 0;
+      const max = s ? s.stock - inCart : 0;
+      if (qty > max) qty = Math.max(1, max);
+      $('modal').innerHTML = `<div class="veil" id="veil"><div class="sheet" style="position:relative">
+        <button class="close" id="xClose">×</button>
+        <div class="ph${p.photo ? '' : ' np'}">${photoHTML(p)}</div>
+        <div class="sbody">
+          <div class="sz">${esc(p.cat)}</div>
+          <h2>${esc(p.name)}</h2>
+          <div class="price"><b style="font-size:22px">${s ? '' : (p.sizes.some(z => (z.price || p.price) !== unit) ? 'от ' : '')}${money(unit)}</b>${op ? `<span class="old" style="font-size:14px">${money(op)}</span>` : ''}</div>
+          ${p.sizes.length > 1 || !/один/i.test(p.sizes[0].size) ? `<div class="lbl">Размер</div>
+          <div class="sizes">${p.sizes.map(z => `<button class="size${z.sku === sel ? ' on' : ''}" data-sku="${esc(z.sku)}" ${z.stock > 0 ? '' : 'disabled'}>${esc(z.size)}<small>${z.stock > 0 ? (z.stock <= 3 ? 'ост. ' + z.stock : 'есть') : 'нет'}</small></button>`).join('')}</div>` : ''}
+          <div class="lbl">Количество</div>
+          <div class="row"><div class="qty"><button id="qm">−</button><span>${qty}</span><button id="qp">+</button></div>
+            <div class="sz">${s ? (inCart ? `В корзине: ${inCart} шт` : `В наличии: ${s.stock} шт`) : 'Выберите размер'}</div></div>
+          <button class="primary" id="addBtn" ${!s || max <= 0 ? 'disabled' : ''}>${!s ? 'Выберите размер' : max <= 0 ? 'Больше нет в наличии' : 'В корзину · ' + money(unit * qty)}</button>
+        </div></div></div>`;
+      $('veil').onclick = e => { if (e.target.id === 'veil') closeModal(); };
+      $('xClose').onclick = closeModal;
+      $('modal').querySelectorAll('.size').forEach(b => b.onclick = () => { sel = b.dataset.sku; qty = 1; haptic(); draw(); });
+      $('qm').onclick = () => { if (qty > 1) { qty--; draw(); } };
+      $('qp').onclick = () => { if (s && qty < max) { qty++; draw(); } };
+      $('addBtn').onclick = () => {
+        S.cart[sel] = (S.cart[sel] || 0) + qty; save(); updateCart(); closeModal();
+        try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
+        toast('Добавлено в корзину');
+      };
+    };
+    draw();
+    setBack(closeModal);
+  }
+  function closeModal(){ $('modal').innerHTML = ''; setBack(S.view === 'catalog' ? null : goBack); }
+
+  /* ---------- cart ---------- */
+  const cartLines = () => Object.entries(S.cart).filter(([k]) => bySku[k]).map(([k, q]) => ({ sku: k, qty: q, p: bySku[k].p, s: bySku[k].s }));
+  const cartCount = () => cartLines().reduce((a, l) => a + l.qty, 0);
+  const cartSum = () => cartLines().reduce((a, l) => a + l.qty * unitPrice(l.sku), 0);
+  const unitPrice = sku => bySku[sku].s.price || bySku[sku].p.price;
+  function updateCart(){
+    const n = cartCount();
+    $('badge').textContent = n; $('badge').classList.toggle('hidden', !n);
+    if (S.view === 'cart') renderCart();
+    syncMainButton();
+  }
+  function renderCart(){
+    const lines = cartLines();
+    $('vCart').innerHTML = `<button class="backlink" data-go="catalog">← Каталог</button><h1>Корзина</h1>` + (lines.length ? `
+      <div class="box">${lines.map(l => `<div class="line">
+        <div class="thumb">${l.p.photo ? `<img src="${esc(l.p.photo)}" alt="">` : esc(initials(l.p.name))}</div>
+        <div class="grow"><div class="n">${esc(l.p.name)}</div>
+          <div class="m">${/один/i.test(l.s.size) ? '' : 'Размер ' + esc(l.s.size) + ' · '}${money(unitPrice(l.sku))}</div>
+          <button class="del" data-del="${esc(l.sku)}">Удалить</button></div>
+        <div class="qty"><button data-dec="${esc(l.sku)}">−</button><span>${l.qty}</span><button data-inc="${esc(l.sku)}">+</button></div>
+      </div>`).join('')}</div>
+      <div class="total"><span>Итого (${cartCount()} шт)</span><span>${money(cartSum())}</span></div>`
+      : `<div class="empty">Корзина пуста.<br><br><button class="backlink" data-go="catalog">Перейти в каталог</button></div>`);
+  }
+
+  /* ---------- checkout ---------- */
+  function renderCheckout(err){
+    const f = S.form;
+    $('vCheckout').innerHTML = `<button class="backlink" data-go="cart">← Корзина</button><h1>Оформление</h1>
+      <div class="field"><label>Ваше имя</label><input id="fName" value="${esc(f.name)}" autocomplete="name"></div>
+      <div class="field"><label>Телефон (WhatsApp)</label><input id="fPhone" type="tel" inputmode="tel" placeholder="+7 7__ ___ __ __" value="${esc(f.phone)}" autocomplete="tel"></div>
+      <div class="field"><label>Получение</label><div class="seg">
+        <button data-dl="Самовывоз" class="${f.delivery === 'Самовывоз' ? 'on' : ''}">Самовывоз</button>
+        <button data-dl="Доставка" class="${f.delivery === 'Доставка' ? 'on' : ''}">Доставка</button></div></div>
+      <div class="field ${f.delivery === 'Доставка' ? '' : 'hidden'}" id="addrBox"><label>Адрес доставки</label><textarea id="fAddr" rows="2" placeholder="Город, улица, дом, квартира">${esc(f.address)}</textarea></div>
+      <div class="field"><label>Комментарий (необязательно)</label><textarea id="fComm" rows="2" placeholder="Удобное время звонка, пожелания">${esc(f.comment)}</textarea></div>
+      <div class="box" style="padding:12px 14px">${cartLines().map(l => `<div class="row" style="padding:4px 0;font-size:14px"><span>${esc(l.p.name)}${/один/i.test(l.s.size) ? '' : ', ' + esc(l.s.size)} × ${l.qty}</span><b>${money(l.qty * unitPrice(l.sku))}</b></div>`).join('')}
+        <div class="row" style="padding-top:10px;margin-top:6px;border-top:1px solid var(--line);font-size:17px"><b>Итого</b><b>${money(cartSum())}</b></div></div>
+      <p class="sz" style="margin:12px 4px">Оплата после подтверждения заказа менеджером.</p>
+      ${err ? `<div class="err">${esc(err)}</div>` : ''}`;
+    const bind = (id, key) => { const el = $(id); el.oninput = () => { S.form[key] = el.value; store.set('hk_form', JSON.stringify(S.form)); }; };
+    bind('fName', 'name'); bind('fPhone', 'phone'); bind('fAddr', 'address'); bind('fComm', 'comment');
+    $('vCheckout').querySelectorAll('[data-dl]').forEach(b => b.onclick = () => { S.form.delivery = b.dataset.dl; store.set('hk_form', JSON.stringify(S.form)); renderCheckout(); });
+  }
+  function validate(){
+    const f = S.form, digits = (f.phone || '').replace(/\D/g, '');
+    if (!f.name.trim()) return 'Укажите имя';
+    if (digits.length < 10) return 'Укажите номер телефона';
+    if (f.delivery === 'Доставка' && f.address.trim().length < 5) return 'Укажите адрес доставки';
+    if (!cartLines().length) return 'Корзина пуста';
+    return '';
+  }
+  async function submit(){
+    if (S.sending) return;
+    const err = validate(); if (err) { renderCheckout(err); haptic('heavy'); return; }
+    if (!inTG) { renderCheckout('Заказ можно оформить только внутри Telegram'); return; }
+    S.sending = true; syncMainButton();
+    try {
+      const r = await fetch(API + '/hickmet-order', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tg.initData, customer: S.form, items: cartLines().map(l => ({ sku: l.sku, qty: l.qty })) }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.ok) throw new Error(d.error || 'Не удалось отправить заказ. Попробуйте ещё раз.');
+      S.cart = {}; save(); updateCart();
+      try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
+      showDone(d);
+    } catch(e) {
+      renderCheckout(e.message || 'Ошибка сети. Попробуйте ещё раз.');
+      if (/наличии|остат/i.test(e.message || '')) { setTimeout(() => location.reload(), 2500); }
+    } finally { S.sending = false; syncMainButton(); }
+  }
+  function showDone(d){
+    S.view = 'done'; showView();
+    const uid = inTG && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : '';
+    const refLink = d.ref_link || (BOT && uid ? `https://t.me/${BOT}?start=c_${uid}` : '');
+    $('vDone').innerHTML = `<div class="done"><div class="ok">✓</div><h1>Заказ принят</h1>
+      <p>Номер заказа: <b>${esc(d.order)}</b></p><p>Сумма: <b>${money(d.total || 0)}</b></p>
+      <p>Менеджер свяжется с вами в ближайшее время.</p>
+      ${refLink ? `<div class="ref">🎁 <b>Поделитесь с друзьями</b><br><span class="sz">Отправьте ссылку знакомым — за каждого нового покупателя вы получите бонус.</span>
+        <button class="primary" id="shareBtn">Поделиться ссылкой</button></div>` : ''}
+      <button class="backlink" style="margin-top:20px" data-go="catalog">Вернуться в каталог</button></div>`;
+    if (refLink) $('shareBtn').onclick = () => {
+      const url = 'https://t.me/share/url?url=' + encodeURIComponent(refLink) + '&text=' + encodeURIComponent('HICKMET — распродажа одежды, скидки до 20%');
+      try { tg.openTelegramLink(url); } catch(e) { location.href = url; }
+    };
+  }
+
+  /* ---------- navigation & Telegram buttons ---------- */
+  function showView(){
+    $('vCatalog').classList.toggle('hidden', S.view !== 'catalog');
+    $('top').classList.toggle('hidden', S.view !== 'catalog');
+    $('chips').classList.toggle('hidden', S.view !== 'catalog');
+    $('vCart').classList.toggle('hidden', S.view !== 'cart');
+    $('vCheckout').classList.toggle('hidden', S.view !== 'checkout');
+    $('vDone').classList.toggle('hidden', S.view !== 'done');
+    if (S.view === 'cart') renderCart();
+    if (S.view === 'checkout') renderCheckout();
+    window.scrollTo(0, 0);
+    setBack(S.view === 'catalog' || S.view === 'done' ? null : goBack);
+    syncMainButton();
+  }
+  function go(v){ S.view = v; showView(); }
+  function goBack(){ go(S.view === 'checkout' ? 'cart' : 'catalog'); }
+  let backFn = null;
+  function setBack(fn){
+    if (!tg || !tg.BackButton) return;
+    if (backFn) tg.BackButton.offClick(backFn);
+    backFn = fn;
+    if (fn) { tg.BackButton.onClick(fn); tg.BackButton.show(); } else tg.BackButton.hide();
+  }
+  let mainFn = null;
+  function syncMainButton(){
+    let text = '', fn = null;
+    const n = cartCount();
+    if ((S.view === 'catalog' || S.view === 'cart') && n) { text = S.view === 'catalog' ? `Корзина · ${n} шт · ${money(cartSum())}` : `Оформить · ${money(cartSum())}`; fn = () => go(S.view === 'catalog' ? 'cart' : 'checkout'); }
+    if (S.view === 'checkout') { text = S.sending ? 'Отправляем…' : `Подтвердить заказ · ${money(cartSum())}`; fn = submit; }
+    if (inTG && tg.MainButton) {
+      if (mainFn) tg.MainButton.offClick(mainFn);
+      mainFn = fn;
+      if (fn) {
+        tg.MainButton.setParams({ text, is_visible: true, is_active: !S.sending });
+        tg.MainButton.onClick(fn);
+        if (S.sending) tg.MainButton.showProgress(); else tg.MainButton.hideProgress();
+      } else tg.MainButton.hide();
+    } else {
+      $('webbar').classList.toggle('hidden', !fn);
+      $('webbarBtn').textContent = text; $('webbarBtn').disabled = S.sending; $('webbarBtn').onclick = fn;
+    }
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-fav],[data-c],[data-id],[data-go],[data-del],[data-inc],[data-dec]');
+    if (!t) return;
+    if (t.dataset.fav) { e.stopPropagation(); const id = t.dataset.fav;
+      if (S.favs[id]) delete S.favs[id]; else { S.favs[id] = 1; toast('Добавлено в избранное'); }
+      save(); haptic(); renderChips(); renderGrid(); return; }
+    if (t.dataset.c) { S.cat = t.dataset.c; renderChips(); renderGrid(); window.scrollTo(0, 0); return; }
+    if (t.dataset.id) { openProduct(t.dataset.id); return; }
+    if (t.dataset.go) { go(t.dataset.go); return; }
+    if (t.dataset.del) { delete S.cart[t.dataset.del]; save(); updateCart(); return; }
+    if (t.dataset.inc) { const k = t.dataset.inc; if (S.cart[k] < bySku[k].s.stock) { S.cart[k]++; save(); updateCart(); } else toast('Больше нет в наличии'); return; }
+    if (t.dataset.dec) { const k = t.dataset.dec; S.cart[k]--; if (S.cart[k] <= 0) delete S.cart[k]; save(); updateCart(); return; }
+  });
+  $('cartBtn').onclick = () => go('cart');
+  let qt; $('q').oninput = e => { clearTimeout(qt); qt = setTimeout(() => { S.q = e.target.value; renderGrid(); }, 150); };
+
+  if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('bg_color'); } catch(e){} }
+  load();
+})();
+</script>
+</body>
+</html>
